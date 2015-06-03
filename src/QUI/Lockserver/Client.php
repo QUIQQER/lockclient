@@ -44,6 +44,51 @@ class Client extends QUI\QDOM
     }
 
     /**
+     * Execute the install command at the lock server and return the composer.lock file
+     *
+     * @return string
+     * @throws QUI\Exception
+     */
+    public function install()
+    {
+        $lockServer = $this->getAttribute('lockServer');
+        $jsonFile = $this->getAttribute('composerJsonFile');
+
+        if (empty($lockServer)) {
+            if ($this->getAttribute('isQuiqqer')) {
+                throw new QUI\Exception(
+                    QUI::getLocale()->get(
+                        'quiqqer/lockclient',
+                        'exception.lock.client.unknown.lock.server'
+                    ),
+                    400
+                );
+            }
+
+            throw new QUI\Exception('Unknown Lock-Server', 400);
+        }
+
+        // composer json
+        if (empty($jsonFile) || !file_exists($jsonFile)) {
+            if ($this->getAttribute('isQuiqqer')) {
+                throw new QUI\Exception(
+                    QUI::getLocale()->get(
+                        'quiqqer/lockclient',
+                        'exception.lock.client.composerjson.not.found'
+                    ),
+                    404
+                );
+            }
+
+            throw new QUI\Exception('composer.json file not found', 404);
+        }
+
+        return $this->_request($lockServer.'/v2/install', array(
+            'composerJson' => file_get_contents($jsonFile)
+        ));
+    }
+
+    /**
      * Execute the update command at the lock server and return the composer.lock file
      *
      * @param array|string $packages
@@ -159,8 +204,8 @@ class Client extends QUI\QDOM
     protected function _send($url, array $postFields)
     {
         $lockServer = $this->getAttribute('lockServer');
-        $lockFile = $this->getAttribute('composerJsonFile');
-        $jsonFile = $this->getAttribute('composerLockFile');
+        $jsonFile = $this->getAttribute('composerJsonFile');
+        $lockFile = $this->getAttribute('composerLockFile');
 
         if (empty($lockServer)) {
             if ($this->getAttribute('isQuiqqer')) {
@@ -209,8 +254,19 @@ class Client extends QUI\QDOM
         $postFields['composerJson'] = file_get_contents($jsonFile);
         $postFields['composerLock'] = file_get_contents($lockFile);
 
+        $this->_request($lockServer.$url, $postFields);
+    }
 
-        $Curl = QUI\Utils\Request\Url::Curl($lockServer.$url, array(
+    /**
+     * @param $url
+     * @param $postFields
+     *
+     * @return mixed
+     * @throws QUI\Exception
+     */
+    protected function _request($url, $postFields)
+    {
+        $Curl = QUI\Utils\Request\Url::Curl($url, array(
             CURLOPT_POST       => 1,
             CURLOPT_POSTFIELDS => http_build_query($postFields)
         ));

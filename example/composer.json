@@ -1,0 +1,71 @@
+{
+  "name" : "quiqqer/quiqqer",
+  "type" : "quiqqer-system",
+  "description" : "A modular based management system written in JavaScript and PHP",
+  "version" : "dev-dev",
+  "license" : "GPL-3.0+",
+
+  "authors" : [{
+    "name": "Henning Leutz",
+    "email": "leutz@pcsg.de",
+    "homepage": "http://www.pcsg.de",
+    "role": "Developer"
+  }, {
+    "name": "Moritz Scholz",
+    "email": "scholz@pcsg.de",
+    "homepage": "http://www.pcsg.de",
+    "role": "Developer"
+  }],
+
+  "support" : {
+    "email": "support@pcsg.de",
+    "url": "http://www.quiqqer.com"
+  },
+
+  "repositories": [{
+    "type": "composer",
+    "url": "http://update.quiqqer.com"
+  }],
+
+  "require": {
+    "php" : ">=5.3",
+    "composer/composer": "1.0.0-alpha9",
+    "tedivm/stash" : "0.11.6",
+    "robloach/component-installer" : "0.0.12",
+    "phpmailer/phpmailer" : "v5.2.9",
+    "symfony/http-foundation" : "2.6.4",
+    "symfony/console":  "2.5",
+    "html2text/html2text" : "1.0.1",
+    "intervention/image" : "2.2.*",
+    "quiqqer/qui" : "dev-dev",
+    "quiqqer/qui-php" : "dev-dev",
+    "quiqqer/smarty": "3.*",
+    "quiqqer/smarty3" : "dev-dev",
+    "quiqqer/ckeditor4" : "dev-dev",
+    "quiqqer/calendar" : "dev-dev",
+    "quiqqer/countries" : "dev-dev",
+    "quiqqer/colorpicker" : "dev-dev",
+    "quiqqer/translator" : "dev-dev",
+    "quiqqer/utils" : "dev-dev",
+    "quiqqer/cron" : "dev-dev",
+    "quiqqer/log" : "dev-dev",
+    "quiqqer/diashow" : "dev-dev",
+    "quiqqer/lockclient" : "dev-dev"
+  },
+
+  "scripts": {
+    "post-install-cmd" : [
+      "QUI\\Update::onInstall"
+    ],
+
+    "post-update-cmd": [
+      "QUI\\Update::onUpdate"
+    ]
+  },
+
+  "autoload": {
+    "psr-0" : {
+      "QUI" : "lib/"
+    }
+  }
+}
