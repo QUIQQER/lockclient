@@ -11,7 +11,11 @@ use QUI;
 /**
  * Class Client - for Lockserver v2
  *
- * @author www.pcsg.de (Henning Leutz)
+ * The client is independent and can not be used only in a quiqqer system
+ * A quiqqer system is optional,
+ * if a quiqqer system exists, the client used the QUI::getLocale() messages.
+ *
+ * @author  www.pcsg.de (Henning Leutz)
  * @package QUI\Lockserver
  */
 class Client extends QUI\QDOM
@@ -30,6 +34,13 @@ class Client extends QUI\QDOM
         ));
 
         $this->setAttributes($params);
+
+        // are we in a quiqqer system?
+        $this->setAttribute('isQuiqqer', false);
+
+        if (class_exists('QUI') && is_callable(array('QUI', 'getLocale'))) {
+            $this->setAttribute('isQuiqqer', true);
+        }
     }
 
     /**
@@ -121,14 +132,17 @@ class Client extends QUI\QDOM
         $data = json_decode($json);
 
         if (!$data) {
-
-            throw new QUI\Exception(
-                QUI::getLocale()->get(
-                    'quiqqer/quiqqer',
-                    'exception.lock.client.composerJson.invalid'
-                ),
-                400
-            );
+            if ($this->getAttribute('isQuiqqer')) {
+                throw new QUI\Exception(
+                    QUI::getLocale()->get(
+                        'quiqqer/lockclient',
+                        'exception.lock.client.json.invalid'
+                    ),
+                    400
+                );
+            } else {
+                throw new QUI\Exception('The JSON is invalid', 400);
+            }
         }
     }
 
@@ -149,36 +163,47 @@ class Client extends QUI\QDOM
         $jsonFile = $this->getAttribute('composerLockFile');
 
         if (empty($lockServer)) {
+            if ($this->getAttribute('isQuiqqer')) {
+                throw new QUI\Exception(
+                    QUI::getLocale()->get(
+                        'quiqqer/lockclient',
+                        'exception.lock.client.unknown.lock.server'
+                    ),
+                    400
+                );
+            }
 
-            throw new QUI\Exception(
-                QUI::getLocale()->get(
-                    'quiqqer/quiqqer',
-                    'exception.lock.client.unknown.lock.server'
-                ),
-                400
-            );
+            throw new QUI\Exception('Unknown Lock-Server', 400);
         }
 
         // lock json
         if (empty($lockFile) || !file_exists($lockFile)) {
-            throw new QUI\Exception(
-                QUI::getLocale()->get(
-                    'quiqqer/quiqqer',
-                    'exception.lock.client.lockfile.not.found'
-                ),
-                404
-            );
+            if ($this->getAttribute('isQuiqqer')) {
+                throw new QUI\Exception(
+                    QUI::getLocale()->get(
+                        'quiqqer/lockclient',
+                        'exception.lock.client.lockfile.not.found'
+                    ),
+                    404
+                );
+            }
+
+            throw new QUI\Exception('composer.lock file not found', 404);
         }
 
         // composer json
         if (empty($jsonFile) || !file_exists($jsonFile)) {
-            throw new QUI\Exception(
-                QUI::getLocale()->get(
-                    'quiqqer/quiqqer',
-                    'exception.lock.client.composerjson.not.found'
-                ),
-                404
-            );
+            if ($this->getAttribute('isQuiqqer')) {
+                throw new QUI\Exception(
+                    QUI::getLocale()->get(
+                        'quiqqer/lockclient',
+                        'exception.lock.client.composerjson.not.found'
+                    ),
+                    404
+                );
+            }
+
+            throw new QUI\Exception('composer.json file not found', 404);
         }
 
         $postFields['composerJson'] = file_get_contents($jsonFile);
