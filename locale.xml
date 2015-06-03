@@ -18,6 +18,10 @@
             <de><![CDATA[composer.json konnte nicht gefunden werden.]]></de>
             <en><![CDATA[composer.json file not found.]]></en>
         </locale>
+        <locale name="exception.lock.client.timeout">
+            <de><![CDATA[Request Timeout — Die Anfrage an den Server benötigt länger als erlaubt.]]></de>
+            <en><![CDATA[Request Timeout — the server took longer than its allowed time to process the request.]]></en>
+        </locale>
 
     </groups>
 </locales>

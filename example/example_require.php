@@ -4,11 +4,12 @@ require dirname(dirname(__FILE__)).'/vendor/autoload.php';
 
 $Client = new QUI\Lockserver\Client(array(
     'lockServer'       => 'http://localhost/git/quiqqer/Lockserver',
-    'composerJsonFile' => dirname(__FILE__).'/composer.json'
+    'composerJsonFile' => dirname(__FILE__).'/composer.json',
+    'composerLockFile' => dirname(__FILE__).'/composer.lock'
 ));
 
 try {
-    $result = $Client->install();
+    $result = $Client->requires('quiqqer/diashow');
 
     echo $result;
 
