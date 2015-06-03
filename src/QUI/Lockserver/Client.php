@@ -102,9 +102,14 @@ class Client extends QUI\QDOM
             $packages = array($packages);
         }
 
-        return $this->_send('/v2/update', array(
-            'package' => json_encode($packages)
-        ));
+        if ($packages && !empty($packages)) {
+
+            return $this->_send('/v2/update', array(
+                'package' => json_encode($packages)
+            ));
+        }
+
+        return $this->_send('/v2/update');
     }
 
     /**
@@ -201,7 +206,7 @@ class Client extends QUI\QDOM
      *
      * @throws QUI\Exception
      */
-    protected function _send($url, array $postFields)
+    protected function _send($url, array $postFields=array())
     {
         $lockServer = $this->getAttribute('lockServer');
         $jsonFile = $this->getAttribute('composerJsonFile');
