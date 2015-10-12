@@ -96,15 +96,20 @@ class Client extends QUI\QDOM
      * @return string
      * @throws QUI\Exception
      */
-    public function update($packages)
+    public function update($packages=array())
     {
         if (is_string($packages)) {
             $packages = array($packages);
         }
 
-        return $this->_send('/v2/require', array(
-            'package' => json_encode($packages)
-        ));
+        if ($packages && !empty($packages)) {
+
+            return $this->_send('/v2/update', array(
+                'package' => json_encode($packages)
+            ));
+        }
+
+        return $this->_send('/v2/update');
     }
 
     /**
@@ -126,7 +131,7 @@ class Client extends QUI\QDOM
             $packages = '';
         }
 
-        return $this->_send('/v2/require/dry', array(
+        return $this->_send('/v2/update/dry', array(
             'package' => json_encode($packages)
         ));
     }
@@ -201,7 +206,7 @@ class Client extends QUI\QDOM
      *
      * @throws QUI\Exception
      */
-    protected function _send($url, array $postFields)
+    protected function _send($url, array $postFields=array())
     {
         $lockServer = $this->getAttribute('lockServer');
         $jsonFile = $this->getAttribute('composerJsonFile');
@@ -254,7 +259,7 @@ class Client extends QUI\QDOM
         $postFields['composerJson'] = file_get_contents($jsonFile);
         $postFields['composerLock'] = file_get_contents($lockFile);
 
-        $this->_request($lockServer.$url, $postFields);
+        return $this->_request($lockServer.$url, $postFields);
     }
 
     /**
@@ -268,6 +273,7 @@ class Client extends QUI\QDOM
     {
         $Curl = QUI\Utils\Request\Url::Curl($url, array(
             CURLOPT_POST       => 1,
+            CURLOPT_TIMEOUT    => 120, // wait max two minute
             CURLOPT_POSTFIELDS => http_build_query($postFields)
         ));
 
@@ -276,6 +282,23 @@ class Client extends QUI\QDOM
 
         if ($info['http_code'] == 200) {
             return $result;
+        }
+
+        if (empty($result)) {
+            if ($this->getAttribute('isQuiqqer')) {
+                throw new QUI\Exception(
+                    QUI::getLocale()->get(
+                        'quiqqer/lockclient',
+                        'exception.lock.client.timeout'
+                    ),
+                    408
+                );
+            }
+
+            throw new QUI\Exception(
+                'Request Timeout — the server took longer than its allowed time to process the request.',
+                408
+            );
         }
 
         throw new QUI\Exception($result, 400);
