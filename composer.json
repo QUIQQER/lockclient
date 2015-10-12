@@ -24,7 +24,7 @@
   ],
   "require": {
     "php": ">=5.3",
-    "quiqqer/utils": "dev-dev"
+    "quiqqer/utils": "*"
   },
   "autoload": {
     "psr-0": {
