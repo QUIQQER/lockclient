@@ -1,7 +1,7 @@
 {
   "name": "quiqqer/lockclient",
   "description": "Client for the QUIQQER Lockserver",
-  "version": "dev-master",
+  "version": "0.9.0",
   "license": "GPL-3.0+",
   "type": "quiqqer-plugin",
   "authors": [
