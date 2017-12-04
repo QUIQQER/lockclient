@@ -18,10 +18,7 @@ class Lockclient
     public function getLockfile($requires, $repositories = array())
     {
         // Check if Lockserver should be used
-        if (class_exists('QUI') &&
-            is_callable(array('QUI', 'getPackage')) &&
-            \QUI::getPackage("quiqqer/lockclient")->getConfig()->get("client", "disabled")
-        ) {
+        if (class_exists('QUI') && !\QUI::conf("globals", "lockserver_enabled")) {
             throw new \Exception("Lockserver is disabled!");
         }
 
