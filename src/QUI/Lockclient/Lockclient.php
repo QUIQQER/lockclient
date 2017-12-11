@@ -9,13 +9,14 @@ class Lockclient
      * Retrieves the Lockfile from the lockserver
      *
      * @param array $requires - Array of requirements. Format: [ "package" => "version" ]
-     * @param array $repositories - Array of repositories. Format [ ["type" => "<type>", "url" => "<url>"] ]
+     * @param string|bool $endPoint - (optional) If specified this endpoint instead of the default will be called
+     * @param array - (optional) Additional parameter that should be put into the post fields
      *
      * @return string
      *
      * @throws \Exception
      */
-    public function getLockfile($requires, $repositories = array())
+    public function getLockfile($requires, $endPoint = false, $params = array())
     {
         // Check if Lockserver should be used
         if (class_exists('QUI') && !\QUI::conf("globals", "lockserver_enabled")) {
@@ -23,12 +24,16 @@ class Lockclient
         }
 
         // Prepare request
-        $url = "https://lock.quiqqer.com/generate";
+        $url = "https://lock.quiqqer.com/";
+        if ($endPoint === false) {
+            $endPoint = "generate";
+        }
+        $url = $url . $endPoint;
 
         $fields = array(
-            'requires' => json_encode($requires),
-            'repositories' => json_encode($repositories)
+            'requires' => json_encode($requires)
         );
+        $fields = array_merge($fields, $params);
 
         // Build Curl Request
         $ch = curl_init();
@@ -87,18 +92,19 @@ class Lockclient
 
         file_put_contents($composerJsonPath, json_encode($data, JSON_PRETTY_PRINT));
 
-        return $this->getLockfile($data['require'], $data['repositories']);
+        return $this->getLockfile($data['require']);
     }
 
     /**
      * Creates the composer.lock for the current composer.json
      *
      * @param $composerJsonPath
+     * @param string|bool $package - (optional) If specified the update will only be executed for this package
      *
      * @return string
      * @throws \Exception
      */
-    public function update($composerJsonPath)
+    public function update($composerJsonPath, $package = false)
     {
         if (!file_exists($composerJsonPath)) {
             throw new \Exception("Could not find the composer.json file: '" . $composerJsonPath . "'");
@@ -110,7 +116,14 @@ class Lockclient
         }
 
         $data = json_decode($json, true);
+        if ($package === false) {
+            return $this->getLockfile($data['require']);
+        }
 
-        return $this->getLockfile($data['require'], $data['repositories']);
+        $params = array(
+            "package" => $package
+        );
+        
+        return $this->getLockfile($data['require'], "updatePackage", $params);
     }
 }
