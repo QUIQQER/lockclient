@@ -1,28 +1,25 @@
 {
-  "name": "quiqqer/lockclient",
-  "description": "Client for the QUIQQER Lockserver",
-  "version": "dev-master",
-  "license": "GPL-3.0+",
-  "type": "quiqqer-plugin",
-  "authors": [
-    {
-      "name": "Henning Leutz",
-      "email": "leutz@pcsg.de",
-      "homepage": "http://www.pcsg.de",
-      "role": "Developer"
+    "name": "quiqqer\/lockclient",
+    "description": "Client for the QUIQQER Lockserver",
+    "version": "dev-master",
+    "license": "GPL-3.0+",
+    "type": "quiqqer-plugin",
+    "authors": [
+        {
+            "name": "Henning Leutz",
+            "email": "leutz@pcsg.de",
+            "homepage": "http:\/\/www.pcsg.de",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "support@pcsg.de",
+        "url": "http:\/\/www.quiqqer.com"
+    },
+    "require": [],
+    "autoload": {
+        "psr-4": {
+            "QUI\\Lockclient\\": "src\/QUI\/Lockclient"
+        }
     }
-  ],
-  "support": {
-    "email": "support@pcsg.de",
-    "url": "http://www.quiqqer.com"
-  },
-  "require": {
-    "php": ">=5.3",
-    "quiqqer/utils": "*"
-  },
-  "autoload": {
-    "psr-0": {
-      "QUI": "src/"
-    }
-  }
 }
