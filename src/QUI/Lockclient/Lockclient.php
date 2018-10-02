@@ -2,9 +2,6 @@
 
 namespace QUI\Lockclient;
 
-use QUI\Exception;
-use QUI\System\Log;
-
 class Lockclient
 {
 
@@ -29,7 +26,7 @@ class Lockclient
             throw new \Exception("Could not read the composer.json file: '".$composerJsonPath."'");
         }
 
-        $data = json_decode($json, true);
+        $data                      = json_decode($json, true);
         $data['require'][$package] = $version;
 
         file_put_contents($composerJsonPath, json_encode($data, JSON_PRETTY_PRINT));
@@ -61,18 +58,45 @@ class Lockclient
             throw new \Exception("Could not read the composer.json file: '".$composerJsonPath."'");
         }
 
-        $data = json_decode($json, true);
+        $data   = json_decode($json, true);
         $params = array(
             "requires" => json_encode($data['require'])
         );
 
         $endpoint = "/generate";
         if ($package !== false) {
-            $params["package"]  = $package;
-            $endpoint = "/updatePackage";
+            $params["package"] = $package;
+            $endpoint          = "/updatePackage";
         }
 
         return $this->sendPostRequest($endpoint, $params);
+    }
+
+    /**
+     * Returns an array with outdated packages
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function getOutdated()
+    {
+        // Check if Lockserver should be used
+        if (class_exists('QUI') && !\QUI::conf("globals", "lockserver_enabled")) {
+            throw new \Exception("Lockserver is disabled!");
+        }
+
+        $composerJson = json_decode(file_get_contents(VAR_DIR."/composer/composer.json"), true);
+
+        $fields = array(
+            'lock_content' => file_get_contents(VAR_DIR."/composer/composer.lock"),
+            'requires'     => json_encode($composerJson['require']),
+            'repositories' => json_encode($composerJson['repositories'])
+        );
+        $json   = $this->sendPostRequest("/versions/outdated", $fields);
+
+        $outdated = json_decode($json, true);
+
+        return $outdated;
     }
 
     /**
@@ -109,10 +133,10 @@ class Lockclient
 
         $fields = array(
             'constraints' => json_encode($packageConstraints),
-            'stable' => $onlyStable
+            'stable'      => $onlyStable
         );
-        $json = $this->sendPostRequest("/versions/latest", $fields);
-        
+        $json   = $this->sendPostRequest("/versions/latest", $fields);
+
         $versions = json_decode($json, true);
 
         return $versions;
@@ -144,14 +168,14 @@ class Lockclient
 
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        
+
         //POST
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
 
         // Execute the request
         $result = curl_exec($ch);
-        $info = curl_getinfo($ch);
+        $info   = curl_getinfo($ch);
 
         if (curl_errno($ch) !== 0) {
             throw new \Exception("Curl error: ".curl_error($ch));
