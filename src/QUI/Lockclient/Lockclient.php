@@ -3,6 +3,7 @@
 namespace QUI\Lockclient;
 
 use QUI\Exception;
+use QUI\Locale;
 use QUI\System\Log;
 
 class Lockclient
@@ -16,29 +17,30 @@ class Lockclient
      * @param $version
      *
      * @return string
-     * @throws \Exception
+     * @throws \InvalidArgumentException
+     * @throws Exception
      */
     public function requirePackage($composerJsonPath, $package, $version)
     {
         if (!file_exists($composerJsonPath)) {
-            throw new \Exception("Could not find the composer.json file: '".$composerJsonPath."'");
+            throw new \InvalidArgumentException("Could not find the composer.json file: '".$composerJsonPath."'");
         }
 
         $json = file_get_contents($composerJsonPath);
         if ($json === false) {
-            throw new \Exception("Could not read the composer.json file: '".$composerJsonPath."'");
+            throw new \InvalidArgumentException("Could not read the composer.json file: '".$composerJsonPath."'");
         }
 
-        $data = json_decode($json, true);
+        $data                      = json_decode($json, true);
         $data['require'][$package] = $version;
 
         file_put_contents($composerJsonPath, json_encode($data, JSON_PRETTY_PRINT));
 
         $params = array(
-            "requires" => json_encode($data['require'])
+            'requires' => json_encode($data['require'])
         );
-
-        return $this->sendPostRequest("/generate", $params);
+        
+        return $this->sendPostRequest('/generate', $params);
     }
 
     /**
@@ -48,31 +50,60 @@ class Lockclient
      * @param string|bool $package - (optional) If specified the update will only be executed for this package
      *
      * @return string
-     * @throws \Exception
+     * @throws \InvalidArgumentException
+     * @throws Exception
      */
     public function update($composerJsonPath, $package = false)
     {
         if (!file_exists($composerJsonPath)) {
-            throw new \Exception("Could not find the composer.json file: '".$composerJsonPath."'");
+            throw new \InvalidArgumentException("Could not find the composer.json file: '".$composerJsonPath."'");
         }
 
         $json = file_get_contents($composerJsonPath);
         if ($json === false) {
-            throw new \Exception("Could not read the composer.json file: '".$composerJsonPath."'");
+            throw new \InvalidArgumentException("Could not read the composer.json file: '".$composerJsonPath."'");
         }
 
-        $data = json_decode($json, true);
+        $data   = json_decode($json, true);
         $params = array(
-            "requires" => json_encode($data['require'])
+            'requires' => json_encode($data['require'])
         );
 
-        $endpoint = "/generate";
+        $endpoint = '/generate';
         if ($package !== false) {
-            $params["package"]  = $package;
-            $endpoint = "/updatePackage";
+            $params['package'] = $package;
+            $endpoint          = '/updatePackage';
         }
 
         return $this->sendPostRequest($endpoint, $params);
+    }
+
+    /**
+     * Returns an array with outdated packages
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function getOutdated()
+    {
+        // Check if Lockserver should be used
+        if (class_exists('QUI') && !\QUI::conf('globals', 'lockserver_enabled')) {
+            throw new Exception([
+                'quiqqer/lockclient',
+                'error.lock.disabled'
+            ]);
+        }
+
+        $composerJson = json_decode(file_get_contents(VAR_DIR.'/composer/composer.json'), true);
+
+        $fields = array(
+            'lock_content' => file_get_contents(VAR_DIR.'/composer/composer.lock'),
+            'requires'     => json_encode($composerJson['require']),
+            'repositories' => json_encode($composerJson['repositories'])
+        );
+        $json   = $this->sendPostRequest('/versions/outdated', $fields);
+
+        return json_decode($json, true);
     }
 
     /**
@@ -98,24 +129,25 @@ class Lockclient
      * @param  bool $onlyStable - if this is set to true only stable packages will be considered.
      *
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function getLatestVersionInContraints($packageConstraints, $onlyStable)
     {
         // Check if Lockserver should be used
-        if (class_exists('QUI') && !\QUI::conf("globals", "lockserver_enabled")) {
-            throw new \Exception("Lockserver is disabled!");
+        if (class_exists('QUI') && !\QUI::conf('globals', 'lockserver_enabled')) {
+            throw new Exception([
+                'quiqqer/lockclient',
+                'error.lock.disabled'
+            ]);
         }
 
         $fields = array(
             'constraints' => json_encode($packageConstraints),
-            'stable' => $onlyStable
+            'stable'      => $onlyStable
         );
-        $json = $this->sendPostRequest("/versions/latest", $fields);
-        
-        $versions = json_decode($json, true);
+        $json   = $this->sendPostRequest('/versions/latest', $fields);
 
-        return $versions;
+        return json_decode($json, true);
     }
 
     /**
@@ -125,40 +157,51 @@ class Lockclient
      * @param array $params - Array of paramters
      *
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
     protected function sendPostRequest($endpoint, $params = array())
     {
         // Prepare request
-        $url = "https://lock.quiqqer.com/";
-        $url = $url.$endpoint;
+        $url = 'https://lock.quiqqer.com/';
+        $url .= $endpoint;
 
         // Build Curl Request
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-        // ssl
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-
+        
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        
+
         //POST
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
 
         // Execute the request
         $result = curl_exec($ch);
-        $info = curl_getinfo($ch);
+        $info   = curl_getinfo($ch);
 
         if (curl_errno($ch) !== 0) {
-            throw new \Exception("Curl error: ".curl_error($ch));
+            Log::addError('Lockclient encountered a curl error', [
+                'url'   => $url,
+                'error' => curl_error($ch)
+            ]);
+            throw new Exception([
+                'quiqqer/lockclient',
+                'error.curl.unknown'
+            ]);
         }
 
         if ($info['http_code'] !== 200) {
-            throw new \Exception("Could not retrieve lockfile:".PHP_EOL.$result);
+            Log::addError('The lockclient received an unexpected error code for the request', [
+                'url'        => $url,
+                'error_code' => $info['http_code']
+            ]);
+            throw new Exception([
+                'quiqqer/lockclient',
+                'error.curl.unknown'
+            ]);
         }
 
         return $result;
