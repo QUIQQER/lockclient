@@ -2,6 +2,9 @@
 
 namespace QUI\Lockclient;
 
+use QUI\Exception;
+use QUI\System\Log;
+
 class Lockclient
 {
 
@@ -13,17 +16,18 @@ class Lockclient
      * @param $version
      *
      * @return string
-     * @throws \Exception
+     * @throws \InvalidArgumentException
+     * @throws Exception
      */
     public function requirePackage($composerJsonPath, $package, $version)
     {
         if (!file_exists($composerJsonPath)) {
-            throw new \Exception("Could not find the composer.json file: '".$composerJsonPath."'");
+            throw new \InvalidArgumentException("Could not find the composer.json file: '".$composerJsonPath."'");
         }
 
         $json = file_get_contents($composerJsonPath);
         if ($json === false) {
-            throw new \Exception("Could not read the composer.json file: '".$composerJsonPath."'");
+            throw new \InvalidArgumentException("Could not read the composer.json file: '".$composerJsonPath."'");
         }
 
         $data                      = json_decode($json, true);
@@ -45,17 +49,18 @@ class Lockclient
      * @param string|bool $package - (optional) If specified the update will only be executed for this package
      *
      * @return string
-     * @throws \Exception
+     * @throws \InvalidArgumentException
+     * @throws Exception
      */
     public function update($composerJsonPath, $package = false)
     {
         if (!file_exists($composerJsonPath)) {
-            throw new \Exception("Could not find the composer.json file: '".$composerJsonPath."'");
+            throw new \InvalidArgumentException("Could not find the composer.json file: '".$composerJsonPath."'");
         }
 
         $json = file_get_contents($composerJsonPath);
         if ($json === false) {
-            throw new \Exception("Could not read the composer.json file: '".$composerJsonPath."'");
+            throw new \InvalidArgumentException("Could not read the composer.json file: '".$composerJsonPath."'");
         }
 
         $data   = json_decode($json, true);
@@ -82,7 +87,10 @@ class Lockclient
     {
         // Check if Lockserver should be used
         if (class_exists('QUI') && !\QUI::conf("globals", "lockserver_enabled")) {
-            throw new \Exception("Lockserver is disabled!");
+            throw new Exception([
+                'quiqqer/lockclient',
+                'error.lock.disabled'
+            ]);
         }
 
         $composerJson = json_decode(file_get_contents(VAR_DIR."/composer/composer.json"), true);
@@ -94,9 +102,7 @@ class Lockclient
         );
         $json   = $this->sendPostRequest("/versions/outdated", $fields);
 
-        $outdated = json_decode($json, true);
-
-        return $outdated;
+        return json_decode($json, true);
     }
 
     /**
@@ -122,13 +128,16 @@ class Lockclient
      * @param  bool $onlyStable - if this is set to true only stable packages will be considered.
      *
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function getLatestVersionInContraints($packageConstraints, $onlyStable)
     {
         // Check if Lockserver should be used
         if (class_exists('QUI') && !\QUI::conf("globals", "lockserver_enabled")) {
-            throw new \Exception("Lockserver is disabled!");
+            throw new Exception([
+                'quiqqer/lockclient',
+                'error.lock.disabled'
+            ]);
         }
 
         $fields = array(
@@ -137,9 +146,7 @@ class Lockclient
         );
         $json   = $this->sendPostRequest("/versions/latest", $fields);
 
-        $versions = json_decode($json, true);
-
-        return $versions;
+        return json_decode($json, true);
     }
 
     /**
@@ -149,7 +156,7 @@ class Lockclient
      * @param array $params - Array of paramters
      *
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
     protected function sendPostRequest($endpoint, $params = array())
     {
@@ -178,11 +185,22 @@ class Lockclient
         $info   = curl_getinfo($ch);
 
         if (curl_errno($ch) !== 0) {
-            throw new \Exception("Curl error: ".curl_error($ch));
+            Log::addError("Lockclient encountered a curl error: ".curl_error($ch));
+            throw new Exception([
+                'quiqqer/lockclient',
+                'error.curl.unknown'
+            ]);
         }
 
         if ($info['http_code'] !== 200) {
-            throw new \Exception("Could not retrieve lockfile:".PHP_EOL.$result);
+            Log::addError("The lockclient received an unexpected error code for the request", [
+                'url'        => $url,
+                'error_code' => $info['http_code']
+            ]);
+            throw new Exception([
+                'quiqqer/lockclient',
+                'error.curl.unknown'
+            ]);
         }
 
         return $result;
