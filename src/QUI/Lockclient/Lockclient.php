@@ -3,6 +3,7 @@
 namespace QUI\Lockclient;
 
 use QUI\Exception;
+use QUI\Locale;
 use QUI\System\Log;
 
 class Lockclient
@@ -38,7 +39,7 @@ class Lockclient
         $params = array(
             'requires' => json_encode($data['require'])
         );
-
+        
         return $this->sendPostRequest('/generate', $params);
     }
 
@@ -169,10 +170,7 @@ class Lockclient
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-        // ssl
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-
+        
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
