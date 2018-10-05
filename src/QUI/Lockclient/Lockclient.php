@@ -36,10 +36,10 @@ class Lockclient
         file_put_contents($composerJsonPath, json_encode($data, JSON_PRETTY_PRINT));
 
         $params = array(
-            "requires" => json_encode($data['require'])
+            'requires' => json_encode($data['require'])
         );
 
-        return $this->sendPostRequest("/generate", $params);
+        return $this->sendPostRequest('/generate', $params);
     }
 
     /**
@@ -65,13 +65,13 @@ class Lockclient
 
         $data   = json_decode($json, true);
         $params = array(
-            "requires" => json_encode($data['require'])
+            'requires' => json_encode($data['require'])
         );
 
-        $endpoint = "/generate";
+        $endpoint = '/generate';
         if ($package !== false) {
-            $params["package"] = $package;
-            $endpoint          = "/updatePackage";
+            $params['package'] = $package;
+            $endpoint          = '/updatePackage';
         }
 
         return $this->sendPostRequest($endpoint, $params);
@@ -86,21 +86,21 @@ class Lockclient
     public function getOutdated()
     {
         // Check if Lockserver should be used
-        if (class_exists('QUI') && !\QUI::conf("globals", "lockserver_enabled")) {
+        if (class_exists('QUI') && !\QUI::conf('globals', 'lockserver_enabled')) {
             throw new Exception([
                 'quiqqer/lockclient',
                 'error.lock.disabled'
             ]);
         }
 
-        $composerJson = json_decode(file_get_contents(VAR_DIR."/composer/composer.json"), true);
+        $composerJson = json_decode(file_get_contents(VAR_DIR.'/composer/composer.json'), true);
 
         $fields = array(
-            'lock_content' => file_get_contents(VAR_DIR."/composer/composer.lock"),
+            'lock_content' => file_get_contents(VAR_DIR.'/composer/composer.lock'),
             'requires'     => json_encode($composerJson['require']),
             'repositories' => json_encode($composerJson['repositories'])
         );
-        $json   = $this->sendPostRequest("/versions/outdated", $fields);
+        $json   = $this->sendPostRequest('/versions/outdated', $fields);
 
         return json_decode($json, true);
     }
@@ -133,7 +133,7 @@ class Lockclient
     public function getLatestVersionInContraints($packageConstraints, $onlyStable)
     {
         // Check if Lockserver should be used
-        if (class_exists('QUI') && !\QUI::conf("globals", "lockserver_enabled")) {
+        if (class_exists('QUI') && !\QUI::conf('globals', 'lockserver_enabled')) {
             throw new Exception([
                 'quiqqer/lockclient',
                 'error.lock.disabled'
@@ -144,7 +144,7 @@ class Lockclient
             'constraints' => json_encode($packageConstraints),
             'stable'      => $onlyStable
         );
-        $json   = $this->sendPostRequest("/versions/latest", $fields);
+        $json   = $this->sendPostRequest('/versions/latest', $fields);
 
         return json_decode($json, true);
     }
@@ -161,8 +161,8 @@ class Lockclient
     protected function sendPostRequest($endpoint, $params = array())
     {
         // Prepare request
-        $url = "https://lock.quiqqer.com/";
-        $url = $url.$endpoint;
+        $url = 'https://lock.quiqqer.com/';
+        $url .= $endpoint;
 
         // Build Curl Request
         $ch = curl_init();
@@ -185,7 +185,10 @@ class Lockclient
         $info   = curl_getinfo($ch);
 
         if (curl_errno($ch) !== 0) {
-            Log::addError("Lockclient encountered a curl error: ".curl_error($ch));
+            Log::addError('Lockclient encountered a curl error', [
+                'url'   => $url,
+                'error' => curl_error($ch)
+            ]);
             throw new Exception([
                 'quiqqer/lockclient',
                 'error.curl.unknown'
@@ -193,7 +196,7 @@ class Lockclient
         }
 
         if ($info['http_code'] !== 200) {
-            Log::addError("The lockclient received an unexpected error code for the request", [
+            Log::addError('The lockclient received an unexpected error code for the request', [
                 'url'        => $url,
                 'error_code' => $info['http_code']
             ]);
