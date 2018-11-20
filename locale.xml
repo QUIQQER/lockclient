@@ -1,12 +1,25 @@
 <locales>
     <groups name="quiqqer/lockclient" datatype="php">
         <locale name="error.curl.unknown">
-            <de><![CDATA[Es ist ein unerwarteter Fehler bei er Kommunikation mit dem Lockserver aufgetreten. Bitte kontaktieren Sie den System Administrator.]]></de>
-            <en><![CDATA[An unexpected Error occuring during communication with the lockserver. Please contact your systems administrator.]]></en>
+            <de>
+                <![CDATA[Es ist ein unerwarteter Fehler bei er Kommunikation mit dem Lockserver aufgetreten. Bitte kontaktieren Sie den System Administrator.]]></de>
+            <en>
+                <![CDATA[An unexpected Error occuring during communication with the lockserver. Please contact your systems administrator.]]></en>
         </locale>
         <locale name="error.lock.disabled">
-            <de><![CDATA[Es wurde versucht den Lockserver zu kontaktieren, obwohl dessen Verwendung deaktiviert ist.]]></de>
-            <en><![CDATA[The attempt to contact the lockserver failed due to the usage of the lockserver being disabled]]></en>
+            <de>
+                <![CDATA[Es wurde versucht den Lockserver zu kontaktieren, obwohl dessen Verwendung deaktiviert ist.]]></de>
+            <en>
+                <![CDATA[The attempt to contact the lockserver failed due to the usage of the lockserver being disabled]]></en>
+        </locale>
+
+        <locale name="exception.lockserver.unavilable">
+            <de>
+                <![CDATA[Der Lockserver ist momentan nicht erreichbar. Bitte versuchen Sie es später erneut oder erhöhen Sie das Memory Limit von PHP.]]>
+            </de>
+            <en>
+                <![CDATA[The lockserver is currently not avilable. Please try again later or increase the memory limit of PHP.]]>
+            </en>
         </locale>
     </groups>
 </locales>
