@@ -6,7 +6,7 @@
 
 namespace QUI\Lockclient;
 
-use QUI\Exception;
+use QUI\Lockclient\Exceptions\LockServerException;
 use QUI\System\Log;
 
 class Lockclient
@@ -86,13 +86,13 @@ class Lockclient
      * Returns an array with outdated packages
      *
      * @return array
-     * @throws \Exception
+     * @throws LockServerException
      */
     public function getOutdated()
     {
         // Check if Lockserver should be used
         if (\class_exists('QUI') && !\QUI::conf('globals', 'lockserver_enabled')) {
-            throw new Exception([
+            throw new LockServerException([
                 'quiqqer/lockclient',
                 'error.lock.disabled'
             ]);
@@ -134,13 +134,13 @@ class Lockclient
      * @param bool $onlyStable - if this is set to true only stable packages will be considered.
      *
      * @return array
-     * @throws Exception
+     * @throws LockServerException
      */
     public function getLatestVersionInContraints($packageConstraints, $onlyStable)
     {
         // Check if Lockserver should be used
         if (\class_exists('QUI') && !\QUI::conf('globals', 'lockserver_enabled')) {
-            throw new Exception([
+            throw new LockServerException([
                 'quiqqer/lockclient',
                 'error.lock.disabled'
             ]);
@@ -163,7 +163,7 @@ class Lockclient
      * @param array $params - Array of paramters
      *
      * @return string
-     * @throws Exception
+     * @throws LockServerException
      */
     protected function sendPostRequest($endpoint, $params = [])
     {
@@ -196,7 +196,7 @@ class Lockclient
                 ]);
             }
 
-            throw new Exception([
+            throw new LockServerException([
                 'quiqqer/lockclient',
                 'error.curl.unknown'
             ]);
@@ -210,7 +210,7 @@ class Lockclient
                 ]);
             }
 
-            throw new Exception([
+            throw new LockServerException([
                 'quiqqer/lockclient',
                 'error.curl.unknown'
             ]);
